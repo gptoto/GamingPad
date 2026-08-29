@@ -1,0 +1,11 @@
+{% extends "partie/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center text-center space-y-4 py-4">
+    <div class="divider"></div>
+    <img src="{% static 'score/images/logo.png' %}" alt="GamePad" class="w-full mx-auto">
+    <div class="divider"></div>
+    <p class="text-base-content/60">Gérez vos parties, vos joueurs et suivez les scores en temps réel</p>
+</div>
+{% endblock %}

@@ -6,6 +6,19 @@ from .models import ListeJoueurs
 
 # Gestion de la liste de joueurs 
 
+def affiche_accueil(request):
+    return render(request, 'partie/accueil.html')
+
+def debut_Flechettes(request):
+    return render(request, 'partie/flechettes.html')
+
+def debut_President(request):
+    return render(request, 'partie/president.html')
+
+def debut_Dumble(request):
+    return render(request, 'partie/dumble.html')
+
+
 def joueurs_view(request):
     if request.method == "POST":
         form = JoueurForm(request.POST)

@@ -22,9 +22,24 @@ class ListeJoueurs(models.Model):
         return self.joueurNom
     
 class Partie(models.Model):
-    mancheNum = models.DecimalField(max_digits=10, decimal_places=0)
-    joueurNum = models.DecimalField(max_digits=10, decimal_places=0)
-    joueurScore = models.DecimalField(max_digits=10, decimal_places=0)
+    type_choices = [
+        ('flechette', 'Fléchette'),
+        ('president', 'Président'),
+        ('dumble', 'Dumble'),
+    ]
 
-    def __int__(self):
-        return self.mancheNum
+    typeJeu = models.CharField(max_length=20, choices=type_choices)
+    dateDebut = models.DateTimeField(auto_now_add=True)
+    dateFin = models.DateTimeField(null=True, blank=True)
+    gagnant = models.ForeignKey(ListeJoueurs, on_delete=models.SET_NULL, null=True, blank=True, related_name='parties_gagnees')
+
+
+class Manche(models.Model):
+    partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name='manches')
+    numero = models.PositiveIntegerField()
+
+
+class ScoreManche(models.Model):
+    manche = models.ForeignKey(Manche, on_delete=models.CASCADE, related_name='scores')
+    joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
+    score = models.IntegerField()

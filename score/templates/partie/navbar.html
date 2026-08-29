@@ -6,9 +6,20 @@
       </div>
       <ul
         tabindex="-1"
-        class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-        <li><a>Homepage</a></li>
-        <li><a>Portfolio</a></li>
+        class="menu menu-lg dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+        <li><a href="{% url 'accueil' %}">Accueil</a></li>
+        <li><a href="{% url 'joueurs' %}">Saisie des scores</a></li>
+        <li>
+          <details>
+            <summary>Lancer une partie</summary>
+            <ul>
+              <li><a href="{% url 'partie_Flechette' %}">Partie de Fléchettes</a></li>
+              <li><a href="{% url 'partie_President' %}">Partie de Président</a></li>
+              <li><a href="{% url 'partie_Dumble' %}">Partie de Dumble</a></li>
+            </ul>
+          </details>
+        </li>
+
         <li><a>About</a></li>
       </ul>
     </div>
