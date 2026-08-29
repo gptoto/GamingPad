@@ -1,0 +1,28 @@
+{% extends "partie/base.html" %} <!-- Import du corps HTML dans base.html pour éviter de tout réécrire -->
+
+{% block content %} 
+
+    <form method = "POST" class="space-y-4 flex flex-col">
+        {% csrf_token %} <!-- génère un token unique et permet à django de sécuriser le formulaire à transmettre -->
+        {{form.joueurNom}}
+        {{form.joueurElim}}
+        <button type="submit" class="btn btn-primary">Ajouter le joueur</button> <!-- type permet de préciser que c'est un bouton de soumission -->
+    </form>
+<div class="divider"></div>
+<div class="w-full bg-base-200">
+    <div class="space-y-4 w-full"> <!-- espacement de 4 sur l'axe vertical pour éviter que les éléments + prend toute la largeur dispo du div -->
+        {% for jrs in joueurs %} <!-- boucle, fais références à la liste employes reçue depuis views.py depuis la BDD (en JSON auparavant) -->
+        <div class="p-4 bg-base-100 rounded-lg w-full flex items-center justify-between">
+            <div class="flex flex-wrap gap-2">
+                <p class="badge badge-soft badge-xl badge-primary">{{jrs.joueurNum}} - {{jrs.joueurNom}}</p> 
+                <p class="badge badge-soft badge-xl badge-primary">{{jrs.get_joueurElim_display}}</p>
+            </div>
+            <form method="POST" action="{% url 'suppression_joueurs' jrs.id %}"> <!-- Le form est une notion HTML qui déclenche une requête, ici de suppression en y liant un id -->
+                {% csrf_token %}
+                <button type="submit" class="btn btn-error">Supprimer le joueur</button>
+            </form>
+        </div>
+        {% endfor %} <!-- fin de la boucle -->
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="forest"> <!-- Import du thème "forest" depuis DaisyUI -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GamePad</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" /> <!-- Import de daisyUI -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> <!-- Import de daisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" /> <!-- Import d'un thème daisyUI -->
+</head>
+<body>
+    {% include "partie/navbar.html" %} 
+    <div class="flex justify-center mt-32"> <!-- mt = margin-top -->
+        <div class="flex flex-col w-3xl bg-base-200 rounded-xl p-6 "> <!-- arranger la div en colonnes, + modif du background color + arrondi des bords (language CSS) -->
+            <div class="w-full h-fit">
+                {% block content %} <!-- Corps du body, à étailler dans chaque template -->
+                {% endblock %} 
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
