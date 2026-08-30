@@ -1,8 +1,46 @@
 {% extends "partie/base.html" %}
 
 {% block content %}
-<div class="text-center py-12">
-    <h1 class="text-3xl font-bold">Fléchette</h1>
-    <p class="text-base-content/60 mt-2">Page en construction</p>
+<h1 class="text-2xl font-bold mb-4">Partie de 501</h1>
+
+<div class="grid grid-cols-2 gap-2 mb-4">
+    {% for joueur, reste in joueurs_avec_reste %}
+    <div class="bg-base-200 rounded-lg p-3 text-center">
+        <p class="text-sm opacity-60">{{ joueur.joueurNom }}</p>
+        <p class="text-2xl font-bold">{{ reste }}</p>
+    </div>
+    {% endfor %}
 </div>
+
+{% for manche in manches %}
+<div class="bg-base-200 rounded-lg p-4 mb-3">
+    <p class="text-sm opacity-60 mb-2">Manche {{ manche.numero }}</p>
+    <div class="grid grid-cols-2 gap-2">
+        {% for score in manche.scores.all %}
+        <span>{{ score.joueur.joueurNom }}</span>
+        <span class="text-right">
+            {{ score.score }}
+            {% if score.casse %}<span class="badge badge-warning badge-sm ml-1">Casse</span>{% endif %}
+        </span>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+<form method="POST" class="bg-base-200 border border-primary rounded-lg p-4 mb-4">
+    {% csrf_token %}
+    <p class="text-sm text-primary mb-2">Manche {{ numero_manche_active }} (en cours)</p>
+    <div class="grid grid-cols-2 gap-2 mb-3 items-center">
+        {% for joueur in joueurs %}
+        <label>{{ joueur.joueurNom }}</label>
+        <input type="number" name="score_{{ joueur.id }}" class="input input-bordered w-full" placeholder="Score" required>
+        {% endfor %}
+    </div>
+    <button type="submit" name="valider_manche" value="1" class="btn btn-primary w-full">Valider la manche</button>
+</form>
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit" name="fin_partie" value="1" class="btn btn-error w-full">Fin de partie</button>
+</form>
 {% endblock %}

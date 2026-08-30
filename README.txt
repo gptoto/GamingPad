@@ -14,6 +14,9 @@ Application web développée avec Django permettant de gérer une liste de joueu
 - Numérotation automatique et incrémentale des joueurs
 - Suppression d'un joueur depuis la liste
 - Renumérotation automatique après suppression d'un joueur
+- Saisie du score d'une partie de fléchettes 501, par manche et par joueur
+- Calcul des scores automatique par joueur
+- Affichage récapitulatif du score final et du gagnant 
 
 ## Installation
 
@@ -34,8 +37,8 @@ L'application est accessible après sur `http://127.0.0.1:8000/`.
 ```
 gamingpadsite/    # Configuration principale du projet Django
 score/            # Application de gestion des joueurs
-  ├── models.py   # Modèle ListeJoueurs
+  ├── models.py   # Modèles des joueurs et des parties
   ├── forms.py    # Formulaire d'ajout de joueur
-  ├── views.py    # Procédures d'affichage, ajout et suppression
+  ├── views.py    # Procédures d'Affichage/Ajout/Suppression de joueurs et gestion des parties/manches
   └── templates/  # Templates HTML (DaisyUI)
 ```

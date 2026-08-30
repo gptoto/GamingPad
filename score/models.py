@@ -20,9 +20,10 @@ class ListeJoueurs(models.Model):
 
     def __str__(self):
         return self.joueurNom
-    
+
+# Décomposition des parties pour stocker et récupérer le détail plus tard 
 class Partie(models.Model):
-    type_choices = [
+    type_choices = [ # Type de  partie
         ('flechette', 'Fléchette'),
         ('president', 'Président'),
         ('dumble', 'Dumble'),
@@ -33,13 +34,12 @@ class Partie(models.Model):
     dateFin = models.DateTimeField(null=True, blank=True)
     gagnant = models.ForeignKey(ListeJoueurs, on_delete=models.SET_NULL, null=True, blank=True, related_name='parties_gagnees')
 
-
 class Manche(models.Model):
     partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name='manches')
     numero = models.PositiveIntegerField()
-
 
 class ScoreManche(models.Model):
     manche = models.ForeignKey(Manche, on_delete=models.CASCADE, related_name='scores')
     joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
     score = models.IntegerField()
+    casse = models.BooleanField(null=True, blank=True) # Que pour fléchettes 501
