@@ -4,9 +4,20 @@
 <h1 class="text-2xl font-bold mb-4">Partie de 501</h1>
 
 <div class="grid grid-cols-2 gap-2 mb-4">
-    {% for joueur, reste in joueurs_avec_reste %}
+    {% for joueur, reste, rang in joueurs_avec_reste %}
     <div class="bg-base-200 rounded-lg p-3 text-center">
-        <p class="text-sm opacity-60">{{ joueur.joueurNom }}</p>
+        <p class="text-sm opacity-60"> <!-- Si possèdent un rang dans la partie actuelle, attribue une couleur aux joueurs -->
+            {{ joueur.joueurNom }}
+            {% if rang == 1 %}
+            <span class="badge" style="background-color: gold; color: black;">1</span>
+            {% elif rang == 2 %}
+            <span class="badge" style="background-color: silver; color: black;">2</span>
+            {% elif rang == 3 %}
+            <span class="badge" style="background-color: #cd7f32; color: black;">3</span>
+            {% elif rang %}
+            <span class="badge" style="background-color: #90EE90; color: black;">{{ rang }}</span>
+            {% endif %}
+        </p>
         <p class="text-2xl font-bold">{{ reste }}</p>
     </div>
     {% endfor %}
@@ -27,25 +38,60 @@
 </div>
 {% endfor %}
 
-<form method="POST" class="bg-base-200 border border-primary rounded-lg p-4 mb-4">
+<form method="POST" id="form-saisie-tour" class="bg-base-200 border border-primary rounded-lg p-4 mb-4">
     {% csrf_token %}
     <p class="text-sm text-primary mb-2">Tour {{ numero_tour_active }} (en cours)</p>
+
+    <!-- Pour chaque joueur ; affiche son nom, puis soit un champ de saisie du score, soit un badge "A gagné" (s'il a déjà un rang enregistré) -->
     <div class="grid grid-cols-2 gap-2 mb-3 items-center">
-        {% for joueur in joueurs %}
+        {% for joueur, reste, rang in joueurs_avec_reste %}
         <label>{{ joueur.joueurNom }}</label>
-        <input type="number" name="score_{{ joueur.id }}" class="input input-bordered w-full" placeholder="Score" required>
+        {% if rang %}
+        <span class="badge badge-success">A gagné</span>
+        {% else %}
+        <input type="number" name="score_{{ joueur.id }}" class="input input-bordered w-full champ-score" placeholder="Score" required>
+        {% endif %}
         {% endfor %}
     </div>
-    <button type="submit" name="valider_tour" value="1" class="btn btn-primary w-full">Valider la tour</button>
+    <button type="submit" id="btn-valider-tour" name="valider_tour" value="1" class="btn btn-primary w-full">Valider le tour</button>
 </form>
 
 <form method="POST">
     {% csrf_token %}
-    <button type="submit" name="fin_partie" value="1" class="btn btn-error w-full">Fin de partie</button>
+    <button type="submit" name="fin_partie" value="1" class="btn btn-secondary w-full" {% if not tours %}disabled style="opacity: 0.5;"{% endif %}>Fin de partie</button>
 </form>
 <div class="divider"></div>
 <form method="POST" action="{% url 'raz_partie' 'flechette' %}">
     {% csrf_token %}
     <button type="submit" class="btn btn-outline btn-warning w-full mb-4">Réinitialiser la partie</button>
 </form>
+
+<!-- Scripts JS Pour surveiller les champs de saisie de score et piloter le comportement du bouton de validation en conséquence --> 
+<script>
+function verifierChampsRemplis() {
+    const champs = document.querySelectorAll('.champ-score');
+    const bouton = document.getElementById('btn-valider-tour');
+    let tousRemplis = true;
+
+    champs.forEach(function(champ) {
+        if (champ.value.trim() === '') {
+            tousRemplis = false;
+        }
+    });
+
+    if (tousRemplis) {
+        bouton.disabled = false;
+        bouton.style.opacity = '1';
+    } else {
+        bouton.disabled = true;
+        bouton.style.opacity = '0.5';
+    }
+}
+
+document.querySelectorAll('.champ-score').forEach(function(champ) {
+    champ.addEventListener('input', verifierChampsRemplis);
+});
+
+verifierChampsRemplis();
+</script>
 {% endblock %}

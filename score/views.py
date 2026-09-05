@@ -48,6 +48,14 @@ def debut_Flechettes(request):
         tour = Tour.objects.create(partie=partie, numero=dernier_numero + 1)
 
         for joueur in joueurs_actifs:
+
+            # -- Affecter un score de 0 si le joueur actuel a déjà gagné
+            deja_fini = ClassementPartie.objects.filter(partie=partie, joueur=joueur).exists()
+            if deja_fini:
+                ScoreTour.objects.create(tour=tour, joueur=joueur, score=0, casse=False)
+                continue
+            # -- 
+
             score_str = request.POST.get(f'score_{joueur.id}')
             if not score_str:
                 continue
@@ -81,13 +89,18 @@ def debut_Flechettes(request):
     if request.method == "POST" and 'fin_partie' in request.POST:
         return redirect('fin_partie', partie_id=partie.id)
 
+
+    # Récupère le rang de chaque joueur déjà fini . Ex: {3: 1, 7: 2} = joueur id 3 est 1er, joueur id 7 est 2e, etc..
+    classements_actuels = {}
+    for c in ClassementPartie.objects.filter(partie=partie):
+        classements_actuels[c.joueur_id] = c.rang
+
     # Score restant de chaque joueur, sous forme de liste (joueur, reste)
     joueurs_avec_reste = []
     for joueur in joueurs_actifs:
-        total = ScoreTour.objects.filter(
-            tour__partie=partie, joueur=joueur, casse=False
-        ).aggregate(Sum('score'))['score__sum'] or 0
-        joueurs_avec_reste.append((joueur, 501 - total))
+        total = ScoreTour.objects.filter(tour__partie=partie, joueur=joueur, casse=False).aggregate(Sum('score'))['score__sum'] or 0
+        rang = classements_actuels.get(joueur.id)
+        joueurs_avec_reste.append((joueur, 501 - total, rang))
 
     prochain_numero = (tours_jouees.aggregate(Max('numero'))['numero__max'] or 0) + 1
 
@@ -120,7 +133,7 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
             score_totaux.append({
                 'joueur__joueurNom': classement.joueur.joueurNom,
                 'joueur_id': classement.joueur.id,
-                'total': 501 - total,
+                'total': total,
             })
             joueurs_finis_ids.append(classement.joueur.id)
 
@@ -128,7 +141,7 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
         restants = [] # Pour stocker nom/id/score qu'on fusionnera avec score_totaux plus tard (via .extend). Permet de calculer et stocker le score au passage
 
         for joueur in joueurs_non_finis: 
-            total = ScoreTour.objects.filter(tour__partie=partie, joueur=classement.joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
+            total = ScoreTour.objects.filter(tour__partie=partie, joueur=joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
             restants.append({
                 'joueur__joueurNom': joueur.joueurNom,
                 'joueurs_id': joueur.id,
