@@ -34,8 +34,9 @@ class Partie(models.Model):
     dateFin = models.DateTimeField(null=True, blank=True)
     gagnant = models.ForeignKey(ListeJoueurs, on_delete=models.SET_NULL, null=True, blank=True, related_name='parties_gagnees')
 
-class Tour(models.Model):
-    partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name='tours')
+class Tour(models.Model): 
+    # on_delete pour supprimer de façon récursive. Ex : Si ma partie est supprimée en amont, alors je supprime aussi le tour (logique)
+    partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name='tours') 
     numero = models.PositiveIntegerField()
 
 class ScoreTour(models.Model):
@@ -43,3 +44,8 @@ class ScoreTour(models.Model):
     joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
     score = models.IntegerField()
     casse = models.BooleanField(null=True, blank=True) # Que pour fléchettes 501
+
+class ClassementPartie(models.Model): # Enregistrement du classement de chaque joueur à chaque partie
+    partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name = "classements")
+    joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
+    rang = models.PositiveBigIntegerField() # N'accepte que des entiers positifs comme rang

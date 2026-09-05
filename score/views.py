@@ -1,9 +1,12 @@
+from ast import Lambda
+from pyclbr import Class
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Max
 from django.utils import timezone
 
 from score.forms import JoueurForm
-from .models import ListeJoueurs, Partie, Tour, ScoreTour
+from .models import ListeJoueurs, Partie, Tour, ScoreTour, ClassementPartie
 
 # Gestion de la liste de joueurs 
 
@@ -38,9 +41,16 @@ def debut_Flechettes(request):
             ).aggregate(Sum('score'))['score__sum'] or 0
 
             nouveau_total = total_actuel + score
-            casse = nouveau_total > 501 or nouveau_total == 500
+            casse = nouveau_total > 501
 
             ScoreTour.objects.create(tour=tour, joueur=joueur, score=score, casse=casse)
+
+            # Si le joueur vient d'atteindre 501 pile, on lui attribue le prochain rang disponible
+            if not casse and nouveau_total == 501:
+                deja_classe = ClassementPartie.objects.filter(partie=partie, joueur=joueur).exists()
+                if not deja_classe:
+                    dernier_rang = ClassementPartie.objects.filter(partie=partie).aggregate(Max('rang'))['rang__max'] or 0
+                    ClassementPartie.objects.create(partie=partie, joueur=joueur, rang=dernier_rang + 1)
 
         return redirect('partie_Flechette')
 
@@ -70,23 +80,49 @@ def debut_President(request):
 def debut_Dumble(request):
     return render(request, 'partie/dumble.html')
 
-def fin_partie(request, partie_id):
+def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gagne la partie (en fonction du type de jeu), enregistre ces infos puis les affiche
     partie = get_object_or_404(Partie, id=partie_id)
 
-    # Calcule le score total de chaque joueur sur la partie
-    scores_totaux = (
-        ScoreTour.objects.filter(tour__partie=partie)
-        .values('joueur__joueurNom', 'joueur_id')
-        .annotate(total=Sum('score'))
-    )
+    joueurs = ListeJoueurs.objects.filter(joueurElim=1) # TODO: A CLARIFIER (pourquoi on utilise filter surtout)
 
-    # Trie selon la règle du jeu
-    if partie.typeJeu == 'flechette':
-        scores_totaux = scores_totaux.order_by('-total')
-    elif partie.typeJeu == 'president':
-        scores_totaux = scores_totaux.order_by('total')
-    elif partie.typeJeu == 'dumble':
-        scores_totaux = scores_totaux.order_by('-total')  # à ajuster selon les règles réelles
+    if partie.typeJeu == "flechette":
+        score_totaux = []
+
+        classements = ClassementPartie.objects.filter(partie=partie).order_by('rang') # TODO: A CLARIFIER
+        joueurs_finis_ids = []
+        for classement in classements: # TODO: A CLARIFIER (logique du aggregate floue)
+            total = ScoreTour.objects.filter(tour__partie=partie, joueur=classement.joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
+            score_totaux.append({
+                'joueur__joueurNom': classement.joueur.joueurNom,
+                'joueurs_id': classement.joueur.id,
+                'total': 501 - total,
+            })
+            joueurs_finis_ids.append(classement.joueur.id)
+
+        joueurs_non_finis = joueurs.exclude(id__in=joueurs_finis_ids) # Récupère la liste des joueurs, moins ceux ayant finis
+        restants = [] # TODO: A CLARIFIER (quelle différence avec joueurs_non_finis ?)
+
+        for joueur in joueurs_non_finis: 
+            total = ScoreTour.objects.filter(tour__partie=partie, joueur=classement.joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
+            restants.append({
+                'joueur__joueurNom': joueur.joueurNom,
+                'joueurs_id': joueur.id,
+                'total': 501 - total,
+            })
+        restants.sort(key=lambda s :s['total']) # TODO: A CLARIFIER (pas capté l'utilité des deux lignes + pourquoi 'lambda' en valeur de key)
+        score_totaux.extend(restants)
+
+    else:
+        score_totaux = list(
+            ScoreTour.objects.filter(tour__partie=partie)
+            .values('joueur__joueurNom', 'joueur_id')
+            .annotate(total=Sum('score'))
+        )
+        if partie.typeJeu == 'president': # TODO: A CLARIFIER (pourquoi le placé ici et pas dans un elif à la suite de "if partie.typeJeu == 'flechette'")
+            score_totaux.sort(key=lambda s: s['total'])
+        else:
+            score_totaux.sort(key=lambda s: -s['total'])
+
 
     # Enregistre le gagnant et la fin de partie
     if scores_totaux:
