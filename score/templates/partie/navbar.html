@@ -20,7 +20,19 @@
           </details>
         </li>
 
-        <li><a>About</a></li>
+        <li>
+          <details>
+            <summary>About</summary>
+            <ul>
+              <li><a href="{% url 'about_contact' %}">Fiche contact</a></li>
+              <li><a href="{% url 'about_suggestion' %}">Suggestions</a></li>
+              {% if request.user.is_staff %} <!-- Vérifie si l'utilisateur actuel est bien connecté en admin -->
+              <li><a href="{% url 'about_consultation' %}">Consultation</a></li>
+              {% endif %}
+            </ul>
+          </details>
+        </li>
+
       </ul>
     </div>
   </div>

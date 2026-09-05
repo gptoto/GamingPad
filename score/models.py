@@ -49,3 +49,8 @@ class ClassementPartie(models.Model): # Enregistrement du classement de chaque j
     partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name = "classements")
     joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
     rang = models.PositiveBigIntegerField() # N'accepte que des entiers positifs comme rang
+
+class Suggestion(models.Model): # Gestion des suggestions et remontées de bug, stockés en base (pour éviter de créer un SMTP) et affichés sur une page réservée aux admins
+    nom = models.CharField(max_length=50)
+    message = models.TextField()
+    dateEnvoi = models.DateTimeField(auto_now_add=True)

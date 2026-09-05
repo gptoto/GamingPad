@@ -1,12 +1,13 @@
 from ast import Lambda
 from pyclbr import Class
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Max
 from django.utils import timezone
 
-from score.forms import JoueurForm
-from .models import ListeJoueurs, Partie, Tour, ScoreTour, ClassementPartie
+from score.forms import JoueurForm, SuggestionForm
+from .models import ListeJoueurs, Partie, Suggestion, Tour, ScoreTour, ClassementPartie, Suggestion
 
 
 def raz_Partie(request, type_jeu): #RAZ de la partie 
@@ -217,3 +218,28 @@ def suppr_Joueurs(request, id):
 
         return redirect('joueurs')
     return redirect('joueurs') #else
+
+# --- Gestion des suggestions
+
+def about_contact(request):
+    return render(request, 'partie/about_contact.html')
+
+def about_suggestion(request):
+    if request.method == "POST":
+        form = SuggestionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            request.session['suggestion_envoyee'] = True
+            return redirect('about_suggestion')
+    else:
+        form = SuggestionForm()
+
+    envoi_reussi = request.session.pop('suggestion_envoyee', False)
+    return render(request, 'partie/about_suggestion.html', {'form': form, 'envoi_reussi': envoi_reussi})
+
+@staff_member_required #fonction DJANGO qui vérifie la connexion admin
+def about_consultation(request):
+    suggestions = Suggestion.objects.order_by('-dateEnvoi') # - pour décroissant
+    return render(request, 'partie/about_consultation.html', {'suggestions': suggestions})
+
+# ---
