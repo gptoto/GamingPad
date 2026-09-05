@@ -34,12 +34,12 @@ class Partie(models.Model):
     dateFin = models.DateTimeField(null=True, blank=True)
     gagnant = models.ForeignKey(ListeJoueurs, on_delete=models.SET_NULL, null=True, blank=True, related_name='parties_gagnees')
 
-class Manche(models.Model):
-    partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name='manches')
+class Tour(models.Model):
+    partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name='tours')
     numero = models.PositiveIntegerField()
 
-class ScoreManche(models.Model):
-    manche = models.ForeignKey(Manche, on_delete=models.CASCADE, related_name='scores')
+class ScoreTour(models.Model):
+    tour = models.ForeignKey(Tour, on_delete=models.CASCADE, related_name='scores')
     joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
     score = models.IntegerField()
     casse = models.BooleanField(null=True, blank=True) # Que pour fléchettes 501

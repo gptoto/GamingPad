@@ -3,7 +3,7 @@ from django.db.models import Sum, Max
 from django.utils import timezone
 
 from score.forms import JoueurForm
-from .models import ListeJoueurs, Partie, Manche, ScoreManche
+from .models import ListeJoueurs, Partie, Tour, ScoreTour
 
 # Gestion de la liste de joueurs 
 
@@ -21,11 +21,11 @@ def debut_Flechettes(request):
         request.session['partie_flechette_id'] = partie.id
 
     joueurs_actifs = ListeJoueurs.objects.filter(joueurElim=1).order_by('joueurNum')
-    manches_jouees = partie.manches.order_by('numero')
+    tours_jouees = partie.tours.order_by('numero')
 
-    if request.method == "POST" and 'valider_manche' in request.POST:
-        dernier_numero = manches_jouees.aggregate(Max('numero'))['numero__max'] or 0
-        manche = Manche.objects.create(partie=partie, numero=dernier_numero + 1)
+    if request.method == "POST" and 'valider_tour' in request.POST:
+        dernier_numero = tours_jouees.aggregate(Max('numero'))['numero__max'] or 0
+        tour = Tour.objects.create(partie=partie, numero=dernier_numero + 1)
 
         for joueur in joueurs_actifs:
             score_str = request.POST.get(f'score_{joueur.id}')
@@ -33,14 +33,14 @@ def debut_Flechettes(request):
                 continue
             score = int(score_str)
 
-            total_actuel = ScoreManche.objects.filter(
-                manche__partie=partie, joueur=joueur, casse=False
+            total_actuel = ScoreTour.objects.filter(
+                tour__partie=partie, joueur=joueur, casse=False
             ).aggregate(Sum('score'))['score__sum'] or 0
 
             nouveau_total = total_actuel + score
             casse = nouveau_total > 501 or nouveau_total == 500
 
-            ScoreManche.objects.create(manche=manche, joueur=joueur, score=score, casse=casse)
+            ScoreTour.objects.create(tour=tour, joueur=joueur, score=score, casse=casse)
 
         return redirect('partie_Flechette')
 
@@ -50,18 +50,18 @@ def debut_Flechettes(request):
     # Score restant de chaque joueur, sous forme de liste (joueur, reste)
     joueurs_avec_reste = []
     for joueur in joueurs_actifs:
-        total = ScoreManche.objects.filter(
-            manche__partie=partie, joueur=joueur, casse=False
+        total = ScoreTour.objects.filter(
+            tour__partie=partie, joueur=joueur, casse=False
         ).aggregate(Sum('score'))['score__sum'] or 0
         joueurs_avec_reste.append((joueur, 501 - total))
 
-    prochain_numero = (manches_jouees.aggregate(Max('numero'))['numero__max'] or 0) + 1
+    prochain_numero = (tours_jouees.aggregate(Max('numero'))['numero__max'] or 0) + 1
 
     return render(request, 'partie/flechettes.html', {
         'joueurs': joueurs_actifs,
         'joueurs_avec_reste': joueurs_avec_reste,
-        'manches': manches_jouees,
-        'numero_manche_active': prochain_numero,
+        'tours': tours_jouees,
+        'numero_tour_active': prochain_numero,
     })
 
 def debut_President(request):
@@ -75,7 +75,7 @@ def fin_partie(request, partie_id):
 
     # Calcule le score total de chaque joueur sur la partie
     scores_totaux = (
-        ScoreManche.objects.filter(manche__partie=partie)
+        ScoreTour.objects.filter(tour__partie=partie)
         .values('joueur__joueurNom', 'joueur_id')
         .annotate(total=Sum('score'))
     )
@@ -100,7 +100,7 @@ def fin_partie(request, partie_id):
     return render(request, 'partie/recap.html', {
         'partie': partie,
         'scores_totaux': scores_totaux,
-        'nb_manches': partie.manches.count(),
+        'nb_tours': partie.tours.count(),
     })
 
 def joueurs_view(request):
@@ -133,10 +133,10 @@ def suppr_Joueurs(request, id):
         return redirect('joueurs')
     return redirect('joueurs') #else
 
-# Gestion de la manche
+# Gestion de la tour
 
 #def debut_Partie(request):
-    # RAZ de la manche
-    # Début d'une manche (donc ajout d'une manche)
+    # RAZ de la tour
+    # Début d'une tour (donc ajout d'une tour)
 
-#def ajout_Manche(request):
+#def ajout_Tour(request):

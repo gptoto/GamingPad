@@ -20,7 +20,6 @@ Application web développée avec Django permettant de gérer une liste de joueu
 
 ## Installation
 
-```bash
 git clone <url-du-repo>
 cd GamingPad
 python -m venv env
@@ -28,17 +27,14 @@ env\Scripts\activate  # Windows
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
-```
 
 L'application est accessible après sur `http://127.0.0.1:8000/`.
 
 ## Structure du projet
 
-```
 gamingpadsite/    # Configuration principale du projet Django
 score/            # Application de gestion des joueurs
   ├── models.py   # Modèles des joueurs et des parties
   ├── forms.py    # Formulaire d'ajout de joueur
   ├── views.py    # Procédures d'Affichage/Ajout/Suppression de joueurs et gestion des parties/manches
   └── templates/  # Templates HTML (DaisyUI)
-```

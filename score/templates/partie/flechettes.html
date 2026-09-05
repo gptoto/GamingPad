@@ -12,11 +12,11 @@
     {% endfor %}
 </div>
 
-{% for manche in manches %}
+{% for tour in tours %}
 <div class="bg-base-200 rounded-lg p-4 mb-3">
-    <p class="text-sm opacity-60 mb-2">Manche {{ manche.numero }}</p>
+    <p class="text-sm opacity-60 mb-2">Tour {{ tour.numero }}</p>
     <div class="grid grid-cols-2 gap-2">
-        {% for score in manche.scores.all %}
+        {% for score in tour.scores.all %}
         <span>{{ score.joueur.joueurNom }}</span>
         <span class="text-right">
             {{ score.score }}
@@ -29,14 +29,14 @@
 
 <form method="POST" class="bg-base-200 border border-primary rounded-lg p-4 mb-4">
     {% csrf_token %}
-    <p class="text-sm text-primary mb-2">Manche {{ numero_manche_active }} (en cours)</p>
+    <p class="text-sm text-primary mb-2">Tour {{ numero_tour_active }} (en cours)</p>
     <div class="grid grid-cols-2 gap-2 mb-3 items-center">
         {% for joueur in joueurs %}
         <label>{{ joueur.joueurNom }}</label>
         <input type="number" name="score_{{ joueur.id }}" class="input input-bordered w-full" placeholder="Score" required>
         {% endfor %}
     </div>
-    <button type="submit" name="valider_manche" value="1" class="btn btn-primary w-full">Valider la manche</button>
+    <button type="submit" name="valider_tour" value="1" class="btn btn-primary w-full">Valider la tour</button>
 </form>
 
 <form method="POST">

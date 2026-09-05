@@ -19,7 +19,7 @@
             </div>
             <form method="POST" action="{% url 'suppression_joueurs' jrs.id %}"> <!-- Le form est une notion HTML qui déclenche une requête, ici de suppression en y liant un id -->
                 {% csrf_token %}
-                <button type="submit" class="btn btn-error">Supprimer le joueur</button>
+                <button type="submit" class="btn btn-secondary ">Supprimer le joueur</button>
             </form>
         </div>
         {% endfor %} <!-- fin de la boucle -->

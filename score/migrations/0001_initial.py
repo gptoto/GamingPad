@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             name='Partie',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('mancheNum', models.DecimalField(decimal_places=0, max_digits=10)),
+                ('tourNum', models.DecimalField(decimal_places=0, max_digits=10)),
                 ('joueurNum', models.DecimalField(decimal_places=0, max_digits=10)),
                 ('joueurScore', models.DecimalField(decimal_places=0, max_digits=10)),
             ],
