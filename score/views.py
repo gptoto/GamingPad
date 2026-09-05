@@ -242,4 +242,11 @@ def about_consultation(request):
     suggestions = Suggestion.objects.order_by('-dateEnvoi') # - pour décroissant
     return render(request, 'partie/about_consultation.html', {'suggestions': suggestions})
 
+@staff_member_required
+def suppr_suggestion(request, id):
+    suggestion = get_object_or_404(Suggestion, id=id)
+    if request.method == "POST":
+        suggestion.delete()
+    return redirect('about_consultation')
+
 # ---
