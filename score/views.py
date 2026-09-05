@@ -69,7 +69,14 @@ def debut_Flechettes(request):
                     dernier_rang = ClassementPartie.objects.filter(partie=partie).aggregate(Max('rang'))['rang__max'] or 0
                     ClassementPartie.objects.create(partie=partie, joueur=joueur, rang=dernier_rang + 1)
 
+        # Si un seul joueur (ou aucun) n'a pas encore fini, la partie est automatiquement terminée
+        nb_joueurs_finis = ClassementPartie.objects.filter(partie=partie).count()
+        nb_joueurs_total = joueurs_actifs.count()
+        if nb_joueurs_total - nb_joueurs_finis <= 1:
+            return redirect('fin_partie', partie_id=partie.id)
+
         return redirect('partie_Flechette')
+
 
     if request.method == "POST" and 'fin_partie' in request.POST:
         return redirect('fin_partie', partie_id=partie.id)
@@ -112,7 +119,7 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
             total = ScoreTour.objects.filter(tour__partie=partie, joueur=classement.joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
             score_totaux.append({
                 'joueur__joueurNom': classement.joueur.joueurNom,
-                'joueurs_id': classement.joueur.id,
+                'joueur_id': classement.joueur.id,
                 'total': 501 - total,
             })
             joueurs_finis_ids.append(classement.joueur.id)
@@ -139,7 +146,7 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
             .values('joueur__joueurNom', 'joueur_id')
             .annotate(total=Sum('score'))
         )
-        if partie.typeJeu == 'president': # TODO: A CLARIFIER (pourquoi le placé ici et pas dans un elif à la suite de "if partie.typeJeu == 'flechette'")
+        if partie.typeJeu == 'president':
             score_totaux.sort(key=lambda s: s['total'])
         else:
             score_totaux.sort(key=lambda s: -s['total'])
@@ -154,7 +161,13 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
     if request.session.get('partie_flechette_id') == partie.id:
         del request.session['partie_flechette_id']
 
-    return render(request, 'partie/recap.html', {
+    template_recap = { # nommage de l'url dynamique selon le type de jeu
+        'flechette': 'partie/recap_flechette.html',
+        'president': 'partie/recap_president.html',
+        'dumble': 'partie/recap_dumble.html',
+    }
+
+    return render(request, template_recap.get(partie.typeJeu, 'partie/recap_flechette.html'), { # Par défaut, renvoie 'partie/recap_flechette.html', sécurité 
         'partie': partie,
         'scores_totaux': score_totaux,
         'nb_tours': partie.tours.count(),
