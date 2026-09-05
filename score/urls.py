@@ -10,5 +10,6 @@ urlpatterns = [
     path('flechette/fin/<int:partie_id>', views.fin_partie, name='fin_partie'),
     path('president/', views.debut_President, name='partie_President'),
     path('dumble/', views.debut_Dumble, name='partie_Dumble'),
-    path('supprimer/<int:id>', views.suppr_Joueurs, name='suppression_joueurs')
+    path('supprimer/<int:id>', views.suppr_Joueurs, name='suppression_joueurs'),
+    path('raz/<str:type_jeu>/', views.raz_Partie, name='raz_partie'),
 ]

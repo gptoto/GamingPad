@@ -8,7 +8,20 @@ from django.utils import timezone
 from score.forms import JoueurForm
 from .models import ListeJoueurs, Partie, Tour, ScoreTour, ClassementPartie
 
-# Gestion de la liste de joueurs 
+
+def raz_Partie(request, type_jeu): #RAZ de la partie 
+    nom_var_session = f'partie_{type_jeu}_id' # équivaut à 'partie_' + type_jeu + '_id'. f désignant un f-string (string concaténé)
+    partie_id = request.session.get(nom_var_session)
+    if partie_id:
+        Partie.objects.filter(id=partie_id).delete()
+        del request.session[nom_var_session]
+
+    routes_par_jeu = { #Gestion dynamique des routes de RAZ + regroupement pour ne pas gérer dans urls.py
+        'flechette': 'partie_Flechette',
+        'president': 'partie_President',
+        'dumble': 'partie_Dumble',
+    }
+    return redirect(routes_par_jeu.get(type_jeu, 'accueil')) # Renvoie la route dynamiquement construite en fonction du type de jeu
 
 def affiche_accueil(request):
     return render(request, 'partie/accueil.html')
@@ -16,6 +29,10 @@ def affiche_accueil(request):
 def debut_Flechettes(request):
     # Récupère la partie en cours (ou en crée une nouvelle)
     partie_id = request.session.get('partie_flechette_id')
+
+    # Si une partie est enregistrée en base sans date_fin (donc en cours), la supprimer pour recommencer une partie propre
+    Partie.objects.filter(typeJeu='', dateFin__isnull=True).exclude(id=partie_id).delete()
+
     partie = None
     if partie_id:
         partie = Partie.objects.filter(id=partie_id, dateFin__isnull=True).first()
@@ -83,14 +100,15 @@ def debut_Dumble(request):
 def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gagne la partie (en fonction du type de jeu), enregistre ces infos puis les affiche
     partie = get_object_or_404(Partie, id=partie_id)
 
-    joueurs = ListeJoueurs.objects.filter(joueurElim=1) # TODO: A CLARIFIER (pourquoi on utilise filter surtout)
+    joueurs = ListeJoueurs.objects.filter(joueurElim=1) # Récupère uniquement les joueurs actifs (1 = Actif, cf la bdd) via un filtre
 
     if partie.typeJeu == "flechette":
         score_totaux = []
 
-        classements = ClassementPartie.objects.filter(partie=partie).order_by('rang') # TODO: A CLARIFIER
+        classements = ClassementPartie.objects.filter(partie=partie).order_by('rang')
         joueurs_finis_ids = []
-        for classement in classements: # TODO: A CLARIFIER (logique du aggregate floue)
+        for classement in classements: # Pour chaque joueur ayant fini, on va chercher tous ses scores, puis on les additionne pour connaitre son score final (théoriquement 0 car a fini) 
+            # ['score_sum'] or 0 permet de renvoyer 0 si la valeur pointée dans le dictionnaire est nulle 
             total = ScoreTour.objects.filter(tour__partie=partie, joueur=classement.joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
             score_totaux.append({
                 'joueur__joueurNom': classement.joueur.joueurNom,
@@ -100,7 +118,7 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
             joueurs_finis_ids.append(classement.joueur.id)
 
         joueurs_non_finis = joueurs.exclude(id__in=joueurs_finis_ids) # Récupère la liste des joueurs, moins ceux ayant finis
-        restants = [] # TODO: A CLARIFIER (quelle différence avec joueurs_non_finis ?)
+        restants = [] # Pour stocker nom/id/score qu'on fusionnera avec score_totaux plus tard (via .extend). Permet de calculer et stocker le score au passage
 
         for joueur in joueurs_non_finis: 
             total = ScoreTour.objects.filter(tour__partie=partie, joueur=classement.joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
@@ -109,7 +127,10 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
                 'joueurs_id': joueur.id,
                 'total': 501 - total,
             })
-        restants.sort(key=lambda s :s['total']) # TODO: A CLARIFIER (pas capté l'utilité des deux lignes + pourquoi 'lambda' en valeur de key)
+
+        # Trie la liste "restants" par ordre croissant ("pour chaque élément s de la liste, prends sa valeur 'total'")
+        # Ici 'lambda' désigne une mini-fonction jetable sans nom, la fonction étant ce qui vient après (et qui explique comment trier le .sort())
+        restants.sort(key=lambda s :s['total']) 
         score_totaux.extend(restants)
 
     else:
@@ -125,8 +146,8 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
 
 
     # Enregistre le gagnant et la fin de partie
-    if scores_totaux:
-        partie.gagnant_id = scores_totaux[0]['joueur_id']
+    if score_totaux:
+        partie.gagnant_id = score_totaux[0]['joueur_id']
     partie.dateFin = timezone.now()
     partie.save()
 
@@ -135,9 +156,11 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
 
     return render(request, 'partie/recap.html', {
         'partie': partie,
-        'scores_totaux': scores_totaux,
+        'scores_totaux': score_totaux,
         'nb_tours': partie.tours.count(),
     })
+
+# Gestion de la liste de joueurs 
 
 def joueurs_view(request):
     if request.method == "POST":
@@ -168,11 +191,3 @@ def suppr_Joueurs(request, id):
 
         return redirect('joueurs')
     return redirect('joueurs') #else
-
-# Gestion de la tour
-
-#def debut_Partie(request):
-    # RAZ de la tour
-    # Début d'une tour (donc ajout d'une tour)
-
-#def ajout_Tour(request):
