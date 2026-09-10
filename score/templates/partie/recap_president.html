@@ -1,0 +1,35 @@
+{% extends "partie/base.html" %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-1">Historique de la partie</h1>
+<p class="opacity-60 mb-4">Président · {{ manches|length }} manche{{ manches|length|pluralize }} jouée{{ manches|length|pluralize }}</p>
+
+{% for manche in manches %}
+<div class="bg-base-200 rounded-lg p-4 mb-3">
+    <p class="text-sm opacity-60 mb-2">Manche {{ manche.numero }}</p>
+    <div class="space-y-1">
+        {% for c in manche.classement %}
+        <div class="flex items-center gap-2">
+            {% if c.role == "Président" %}
+            <span class="badge" style="background-color: gold; color: black;">{{ c.ordre_arrivee }}</span>
+            {% elif c.role == "Vice-Président" %}
+            <span class="badge" style="background-color: silver; color: black;">{{ c.ordre_arrivee }}</span>
+            {% elif c.role == "Vice-Trouduc" %}
+            <span class="badge" style="background-color: #cd7f32; color: black;">{{ c.ordre_arrivee }}</span>
+            {% elif c.role == "Trouduc" %}
+            <span class="badge" style="background-color: #e74c3c; color: black;">{{ c.ordre_arrivee }}</span>
+            {% else %}
+            <span class="badge" style="background-color: #b0b0b0; color: black;">{{ c.ordre_arrivee }}</span>
+            {% endif %}
+            <span style="color: {{ c.joueur.couleur }}; font-weight: bold;">{{ c.joueur.joueurNom }}</span>
+            <span class="text-xs opacity-60">{{ c.role }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+<a href="{% url 'partie_President' %}" class="btn btn-primary w-full mt-4">Recommencer une partie</a>
+<div class="divider"></div>
+<a href="{% url 'accueil' %}" class="btn btn-outline btn-warning w-full mb-4">Retour à l'accueil</a>
+{% endblock %}

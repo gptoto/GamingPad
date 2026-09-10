@@ -1,8 +1,128 @@
 {% extends "partie/base.html" %}
 
+{% block container_class %}w-full max-w-7xl{% endblock %}
+
 {% block content %}
-<div class="text-center py-12">
-    <h1 class="text-3xl font-bold">Président</h1>
-    <p class="text-base-content/60 mt-2">Page en construction</p>
+<h1 class="text-3xl font-bold mb-2">Président</h1>
+<p class="opacity-60 mb-8">Manche {{ numero_manche_active }} · touche les joueurs dans l'ordre d'arrivée</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <!-- Colonne gauche -->
+    <div class="space-y-6">
+
+        <div class="bg-base-200 rounded-xl p-8">
+            <div class="grid grid-cols-2 gap-8 relative">
+                <div class="absolute left-1/2 top-0 bottom-0 border-l border-base-content/10"></div>
+
+                <div>
+                    <p class="text-sm font-medium opacity-70 mb-4">Restant</p>
+                    <div class="space-y-3">
+                        {% if not joueurs_restants %}
+                        <p class="text-sm opacity-40">Tous les joueurs sont classés</p>
+                        {% endif %}
+                        {% for joueur in joueurs_restants %}
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="joueur_id" value="{{ joueur.id }}">
+                            <button type="submit" class="w-full flex items-center justify-between px-4 py-3 bg-base-100 hover:bg-base-300 rounded-lg transition-colors">
+                                <span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span>
+                                <span class="opacity-30">›</span>
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm font-medium text-primary mb-4">Classement</p>
+                    <div class="space-y-3">
+                        {% if not classement_en_cours %}
+                        <p class="text-sm opacity-40">Aucun joueur classé</p>
+                        {% endif %}
+                        {% for c in classement_en_cours %}
+                        <div class="flex items-center gap-3 px-4 py-3 bg-base-100 rounded-lg">
+                            {% if c.role == "Président" %}
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: gold;"></span>
+                            {% elif c.role == "Vice-Président" %}
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: silver;"></span>
+                            {% elif c.role == "Vice-Trouduc" %}
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #cd7f32;"></span>
+                            {% elif c.role == "Trouduc" %}
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #e74c3c;"></span>
+                            {% else %}
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #808080;"></span>
+                            {% endif %}
+                            <div class="min-w-0">
+                                <div style="color: {{ c.joueur.couleur }}; font-weight: bold;" class="truncate">{{ c.joueur.joueurNom }}</div>
+                                <div class="text-xs opacity-50 mt-0.5">{{ c.role }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {% if manche_complete %}
+            <form method="POST" class="mt-8">
+                {% csrf_token %}
+                <button type="submit" name="manche_suivante" value="1" class="btn btn-primary w-full">Manche suivante</button>
+            </form>
+            {% endif %}
+        </div>
+
+        <div class="flex gap-3">
+            <form method="POST" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" name="fin_partie" value="1" class="btn btn-outline w-full" {% if nb_manches_total == 0 %}disabled{% endif %}>Fin de partie</button>
+            </form>
+            <form method="POST" action="{% url 'raz_partie' 'president' %}" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline btn-warning w-full">Réinitialiser</button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Colonne droite -->
+    <div class="bg-base-200 rounded-xl p-8">
+        <p class="font-medium mb-1">Historique</p>
+        <p class="text-sm opacity-50 mb-6">{{ manches_precedentes|length }} manche{{ manches_precedentes|length|pluralize }} jouée{{ manches_precedentes|length|pluralize }}</p>
+
+        {% if not manches_precedentes %}
+        <p class="text-sm opacity-40">Rien à afficher pour l'instant</p>
+        {% endif %}
+
+        <div class="space-y-6">
+            {% for manche in manches_precedentes %}
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-base-100 text-xs opacity-60">{{ manche.numero }}</span>
+                    <p class="text-xs opacity-50">Manche {{ manche.numero }}</p>
+                </div>
+                <div class="bg-base-100 rounded-lg divide-y divide-base-content/5">
+                    {% for c in manche.classement %}
+                    <div class="flex items-center gap-3 px-4 py-3">
+                        {% if c.role == "Président" %}
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: gold;"></span>
+                        {% elif c.role == "Vice-Président" %}
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: silver;"></span>
+                        {% elif c.role == "Vice-Trouduc" %}
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #cd7f32;"></span>
+                        {% elif c.role == "Trouduc" %}
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #e74c3c;"></span>
+                        {% else %}
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #808080;"></span>
+                        {% endif %}
+                        <span style="color: {{ c.joueur.couleur }}; font-weight: bold;" class="text-sm">{{ c.joueur.joueurNom }}</span>
+                        <span class="text-xs opacity-50 ml-auto">{{ c.role }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
 </div>
 {% endblock %}

@@ -1,35 +1,36 @@
 {% extends "partie/base.html" %}
 
-{% block content %}
-<h1 class="text-2xl font-bold mb-1">Qui participe ?</h1>
-<p class="opacity-60 mb-4">{{ nom_jeu }} · choisis les joueurs de la partie</p>
+{% block container_class %}w-full max-w-7xl{% endblock %}
 
-<div class="grid grid-cols-2 gap-4 relative">
-    <div class="absolute left-1/2 top-0 bottom-0 border-l border-base-content/20"></div>
-    <div>
+{% block content %}
+<h1 class="text-3xl font-bold mb-2">{{ nom_jeu }}</h1>
+<p class="opacity-60 mb-8">Qui participe ? choisis les joueurs de la partie</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+    <div class="bg-base-200 rounded-xl p-8">
         <p class="text-sm opacity-60 mb-2">Disponibles</p>
         <div id="liste-dispo" class="space-y-2">
             {% for joueur in joueurs %}
-            <div class="joueur-ligne p-2 bg-base-200 rounded-lg flex items-center justify-between" data-id="{{ joueur.id }}">
+            <div class="joueur-ligne p-2 bg-base-100 rounded-lg flex items-center justify-between" data-id="{{ joueur.id }}">
                 <span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span>
                 <button type="button" class="btn btn-circle btn-sm" onclick="deplacerJoueur(this)">+</button>
             </div>
             {% endfor %}
         </div>
+
+        <div class="flex items-center gap-2 mt-3 pt-3" style="border-top: 1px dashed rgba(255,255,255,0.2);">
+            <input type="text" id="nouveau-joueur-nom" placeholder="Nouveau joueur" class="input input-sm input-bordered flex-1">
+            <button type="button" class="btn btn-circle btn-sm" onclick="ajouterJoueurRapide()">+</button>
+        </div>
     </div>
 
-    <div>
+    <div class="bg-base-200 rounded-xl p-8">
         <p class="text-sm text-primary mb-2">Sélectionnés (<span id="compteur-select">0</span>)</p>
         <div id="liste-select" class="space-y-2"></div>
     </div>
-
-    <div class="flex items-center gap-2 mt-3 pt-3" style="border-top: 1px dashed rgba(255,255,255,0.2);">
-        <input type="text" id="nouveau-joueur-nom" placeholder="Nouveau joueur" class="input input-sm input-bordered flex-1">
-        <button type="button" class="btn btn-circle btn-sm" onclick="ajouterJoueurRapide()">+</button>
-    </div>
 </div>
 
-<form method="POST" id="form-selection" class="mt-4">
+<form method="POST" id="form-selection">
     {% csrf_token %}
     <div id="inputs-caches"></div>
     <button type="submit" class="btn btn-primary w-full">Lancer la partie</button>
@@ -88,7 +89,7 @@ function ajouterJoueurRapide() {
 
         // Construit le bloc HTML du nouveau joueur, identique aux autres lignes
         const ligne = document.createElement('div');
-        ligne.className = 'joueur-ligne p-2 bg-base-200 rounded-lg flex items-center justify-between';
+        ligne.className = 'joueur-ligne p-2 bg-base-100 rounded-lg flex items-center justify-between';
         ligne.dataset.id = data.id;
         ligne.innerHTML = '<span style="color: ' + data.couleur + '; font-weight: bold;">' + data.nom + '</span>' +
             '<button type="button" class="btn btn-circle btn-sm" onclick="deplacerJoueur(this)">+</button>';
@@ -98,8 +99,17 @@ function ajouterJoueurRapide() {
     });
 }
 
-// Juste avant l'envoi du formulaire, crée un champ caché par joueur selectionné pour garder l'info jusque la page suivante
-document.getElementById('form-selection').addEventListener('submit', function() {
+/// Juste avant l'envoi du formulaire, crée un champ caché par joueur selectionné pour garder l'info jusque la page suivante
+document.getElementById('form-selection').addEventListener('submit', function(evenement) {
+    const nbSelectionnes = document.querySelectorAll('#liste-select .joueur-ligne').length;
+
+    // Bloque l'envoi et affiche un message si moins de 2 joueurs sont selectionnes
+    if (nbSelectionnes < 2) {
+        evenement.preventDefault();
+        afficherToastErreur('Sélectionne au moins 2 joueurs pour lancer la partie');
+        return;
+    }
+
     const inputsCaches = document.getElementById('inputs-caches');
     inputsCaches.innerHTML = '';
 
@@ -111,5 +121,25 @@ document.getElementById('form-selection').addEventListener('submit', function() 
         inputsCaches.appendChild(input);
     });
 });
+
+// Affiche un toast rouge en haut de l'ecran, qui disparait tout seul apres 2,5 secondes
+function afficherToastErreur(message) {
+    const toastExistant = document.getElementById('toast-erreur-selection');
+    if (toastExistant) {
+        toastExistant.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.id = 'toast-erreur-selection';
+    toast.className = 'toast toast-top toast-center';
+    toast.style.top = '100px';
+    toast.innerHTML = '<div class="alert alert-error"><span>' + message + '</span></div>';
+    document.body.appendChild(toast);
+
+    setTimeout(function() {
+        toast.style.transition = 'opacity 1s';
+        toast.style.opacity = '0';
+    }, 2500);
+}
 </script>
 {% endblock %}

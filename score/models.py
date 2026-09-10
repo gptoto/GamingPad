@@ -69,6 +69,7 @@ class Tour(models.Model):
     # on_delete pour supprimer de façon récursive. Ex : Si ma partie est supprimée en amont, alors je supprime aussi le tour (logique)
     partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name='tours') 
     numero = models.PositiveIntegerField()
+    valide = models.BooleanField(default=False)  # Utilisé seulement pour le president pour l'instant : vaut True au clic sur "Manche suivante"
 
 class ScoreTour(models.Model):
     tour = models.ForeignKey(Tour, on_delete=models.CASCADE, related_name='scores')
@@ -80,6 +81,12 @@ class ClassementPartie(models.Model): # Enregistrement du classement de chaque j
     partie = models.ForeignKey(Partie, on_delete=models.CASCADE, related_name = "classements")
     joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
     rang = models.PositiveBigIntegerField() # N'accepte que des entiers positifs comme rang
+
+class ClassementManche(models.Model): # Classement pour une manche (utilisée pour le président notamment) avec calcul du rôle selon l'ordre
+    tour = models.ForeignKey(Tour, on_delete=models.CASCADE, related_name='classements_manche')
+    joueur = models.ForeignKey(ListeJoueurs, on_delete=models.CASCADE)
+    ordre_arrivee = models.PositiveIntegerField() 
+    role = models.CharField(max_length=20, blank=True)  
 
 class Suggestion(models.Model): # Gestion des suggestions et remontées de bug, stockés en base (pour éviter de créer un SMTP) et affichés sur une page réservée aux admins
     nom = models.CharField(max_length=50)

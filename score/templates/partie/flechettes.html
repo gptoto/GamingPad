@@ -1,70 +1,89 @@
 {% extends "partie/base.html" %}
 
+{% block container_class %}w-full max-w-7xl{% endblock %}
+
 {% block content %}
 <h1 class="text-2xl font-bold mb-4">Partie de 501</h1>
 
-<div class="grid grid-cols-2 gap-2 mb-4">
-    {% for joueur, reste, rang in joueurs_avec_reste %}
-    <div class="bg-base-200 rounded-lg p-3 text-center">
-        <p class="text-sm opacity-60"> <!-- Si possèdent un rang dans la partie actuelle, attribue une couleur aux joueurs -->
-            <span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span>
-            {% if rang == 1 %}
-            <span class="badge" style="background-color: gold; color: black;">1</span>
-            {% elif rang == 2 %}
-            <span class="badge" style="background-color: silver; color: black;">2</span>
-            {% elif rang == 3 %}
-            <span class="badge" style="background-color: #cd7f32; color: black;">3</span>
-            {% elif rang %}
-            <span class="badge" style="background-color: #90EE90; color: black;">{{ rang }}</span>
-            {% endif %}
-        </p>
-        <p class="text-2xl font-bold">{{ reste }}</p>
-    </div>
-    {% endfor %}
-</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-{% for tour in tours %}
-<div class="bg-base-200 rounded-lg p-4 mb-3">
-    <p class="text-sm opacity-60 mb-2">Tour {{ tour.numero }}</p>
-    <div class="grid grid-cols-2 gap-2">
-        {% for score in tour.scores.all %}
-        <span style="color: {{ score.joueur.couleur }}; font-weight: bold;">{{ score.joueur.joueurNom }}</span>
-        <span class="text-right">
-            {{ score.score }}
-            {% if score.casse %}<span class="badge badge-warning badge-sm ml-1">Casse</span>{% endif %}
-        </span>
+    <!-- Colonne gauche : scores restants + saisie du tour en cours -->
+    <div class="space-y-6">
+
+        <div class="bg-base-200 rounded-xl p-8">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                {% for joueur, reste, rang in joueurs_avec_reste %}
+                <div class="bg-base-100 rounded-lg p-3 text-center">
+                    <p class="text-sm opacity-60"> <!-- Si possèdent un rang dans la partie actuelle, attribue une couleur aux joueurs -->
+                        <span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span>
+                        {% if rang == 1 %}
+                        <span class="badge" style="background-color: gold; color: black;">1</span>
+                        {% elif rang == 2 %}
+                        <span class="badge" style="background-color: silver; color: black;">2</span>
+                        {% elif rang == 3 %}
+                        <span class="badge" style="background-color: #cd7f32; color: black;">3</span>
+                        {% elif rang %}
+                        <span class="badge" style="background-color: #90EE90; color: black;">{{ rang }}</span>
+                        {% endif %}
+                    </p>
+                    <p class="text-2xl font-bold">{{ reste }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <form method="POST" id="form-saisie-tour">
+                {% csrf_token %}
+                <p class="text-sm text-primary mb-2">Tour {{ numero_tour_active }} (en cours)</p>
+
+                <!-- Pour chaque joueur ; affiche son nom, puis soit un champ de saisie du score, soit un badge "A gagné" (s'il a déjà un rang enregistré) -->
+                <div class="grid grid-cols-2 gap-2 mb-3 items-center">
+                    {% for joueur, reste, rang in joueurs_avec_reste %}
+                    <label><span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span></label>
+                    {% if rang %}
+                    <span class="badge badge-success">A gagné</span>
+                    {% else %}
+                    <input type="number" name="score_{{ joueur.id }}" class="input input-bordered w-full champ-score" placeholder="Score" required>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <button type="submit" id="btn-valider-tour" name="valider_tour" value="1" class="btn btn-primary w-full">Valider le tour</button>
+            </form>
+        </div>
+
+        <div class="flex gap-3">
+            <form method="POST" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" name="fin_partie" value="1" class="btn btn-outline w-full" {% if not tours %}disabled style="opacity: 0.5;"{% endif %}>Fin de partie</button>
+            </form>
+            <form method="POST" action="{% url 'raz_partie' 'flechette' %}" class="flex-1">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline btn-warning w-full">Réinitialiser</button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Colonne droite : historique des tours deja joues -->
+    <div class="bg-base-200 rounded-xl p-8">
+        <p class="text-sm opacity-60 mb-2">Historique</p>
+
+        {% for tour in tours %}
+        <div class="bg-base-100 rounded-lg p-4 mb-3">
+            <p class="text-sm opacity-60 mb-2">Tour {{ tour.numero }}</p>
+            <div class="grid grid-cols-2 gap-2">
+                {% for score in tour.scores.all %}
+                <span style="color: {{ score.joueur.couleur }}; font-weight: bold;">{{ score.joueur.joueurNom }}</span>
+                <span class="text-right">
+                    {{ score.score }}
+                    {% if score.casse %}<span class="badge badge-warning badge-sm ml-1">Casse</span>{% endif %}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
         {% endfor %}
     </div>
+
 </div>
-{% endfor %}
-
-<form method="POST" id="form-saisie-tour" class="bg-base-200 border border-primary rounded-lg p-4 mb-4">
-    {% csrf_token %}
-    <p class="text-sm text-primary mb-2">Tour {{ numero_tour_active }} (en cours)</p>
-
-    <!-- Pour chaque joueur ; affiche son nom, puis soit un champ de saisie du score, soit un badge "A gagné" (s'il a déjà un rang enregistré) -->
-    <div class="grid grid-cols-2 gap-2 mb-3 items-center">
-        {% for joueur, reste, rang in joueurs_avec_reste %}
-        <label><span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span></label>
-        {% if rang %}
-        <span class="badge badge-success">A gagné</span>
-        {% else %}
-        <input type="number" name="score_{{ joueur.id }}" class="input input-bordered w-full champ-score" placeholder="Score" required>
-        {% endif %}
-        {% endfor %}
-    </div>
-    <button type="submit" id="btn-valider-tour" name="valider_tour" value="1" class="btn btn-primary w-full">Valider le tour</button>
-</form>
-
-<form method="POST">
-    {% csrf_token %}
-    <button type="submit" name="fin_partie" value="1" class="btn btn-secondary w-full" {% if not tours %}disabled style="opacity: 0.5;"{% endif %}>Fin de partie</button>
-</form>
-<div class="divider"></div>
-<form method="POST" action="{% url 'raz_partie' 'flechette' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-outline btn-warning w-full mb-4">Réinitialiser la partie</button>
-</form>
 
 <!-- Scripts JS Pour surveiller les champs de saisie de score et piloter le comportement du bouton de validation en conséquence --> 
 <script>
