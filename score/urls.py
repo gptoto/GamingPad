@@ -10,6 +10,7 @@ urlpatterns = [
     path('joueurs/', views.gestion_joueurs, name='gestion_joueurs'),
     path('joueurs/couleur/<int:id>/', views.changer_couleur, name='changer_couleur'),
     path('joueurs/supprimer/<int:id>/', views.suppr_Joueurs, name='suppression_joueurs'),
+    path('joueurs/ajout-rapide/', views.ajout_rapide_joueur, name='ajout_rapide_joueur'),
     path('selection/<str:type_jeu>/', views.selection_partie, name='selection_partie'),
     path('raz/<str:type_jeu>/', views.raz_Partie, name='raz_partie'),
 

@@ -2,12 +2,25 @@ from ast import Lambda
 from pyclbr import Class
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Max
 from django.utils import timezone
 
 from score.forms import JoueurForm, CouleurForm, SuggestionForm
 from .models import ListeJoueurs, Partie, Suggestion, Tour, ScoreTour, ClassementPartie
+
+def ajout_rapide_joueur(request): # Depuis la sélection des joueurs, permet un ajout rapide et simplifié d'un joueur via JSON (sans request donc sans recharger la page et donc perdre la liste)
+    if request.method == "POST":
+        nom = request.POST.get('nom','').strip()
+        if nom:
+            joueur = ListeJoueurs.objects.create(joueurNom=nom)
+            return JsonResponse({
+                'id' : joueur.id,
+                'nom' : joueur.joueurNom,
+                'couleur' : joueur.couleur,
+            })
+    return JsonResponse({'erreur': 'nom invalide'}, status=400) # Si le nom est vide, renvoie erreur
 
 def changer_couleur(request, id):
     joueur = get_object_or_404(ListeJoueurs, id=id)

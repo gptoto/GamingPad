@@ -22,6 +22,11 @@
         <p class="text-sm text-primary mb-2">Sélectionnés (<span id="compteur-select">0</span>)</p>
         <div id="liste-select" class="space-y-2"></div>
     </div>
+
+    <div class="flex items-center gap-2 mt-3 pt-3" style="border-top: 1px dashed rgba(255,255,255,0.2);">
+        <input type="text" id="nouveau-joueur-nom" placeholder="Nouveau joueur" class="input input-sm input-bordered flex-1">
+        <button type="button" class="btn btn-circle btn-sm" onclick="ajouterJoueurRapide()">+</button>
+    </div>
 </div>
 
 <form method="POST" id="form-selection" class="mt-4">
@@ -53,6 +58,44 @@ function deplacerJoueur(bouton) {
 function mettreAJourCompteur() {
     const nb = document.getElementById('liste-select').children.length;
     document.getElementById('compteur-select').textContent = nb;
+}
+
+function ajouterJoueurRapide() {
+    const champNom = document.getElementById('nouveau-joueur-nom');
+    const nom = champNom.value.trim();
+    if (!nom) {
+        return;
+    }
+
+    // Recupere le token CSRF necessaire pour toute requete POST Django
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value; // Token nécessaire pour ne pas que DJANGO refuse la requête HTTP
+
+    fetch("{% url 'ajout_rapide_joueur' %}", { // fetch() envoie une requête en arrière plan et évite de recharger toute la page. Il récupère ensuite une réponse JSON du serveur
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'nom=' + encodeURIComponent(nom),
+    })
+    .then(function(reponse) {
+        return reponse.json();
+    })
+    .then(function(data) {
+        if (data.erreur) {
+            return;
+        }
+
+        // Construit le bloc HTML du nouveau joueur, identique aux autres lignes
+        const ligne = document.createElement('div');
+        ligne.className = 'joueur-ligne p-2 bg-base-200 rounded-lg flex items-center justify-between';
+        ligne.dataset.id = data.id;
+        ligne.innerHTML = '<span style="color: ' + data.couleur + '; font-weight: bold;">' + data.nom + '</span>' +
+            '<button type="button" class="btn btn-circle btn-sm" onclick="deplacerJoueur(this)">+</button>';
+
+        document.getElementById('liste-dispo').appendChild(ligne);
+        champNom.value = '';
+    });
 }
 
 // Juste avant l'envoi du formulaire, crée un champ caché par joueur selectionné pour garder l'info jusque la page suivante
