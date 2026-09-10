@@ -190,6 +190,22 @@ def debut_President(request):
     # Le tour en cours est le dernier tour crée, tant qu'il n'a pas été terminé via le bouton "Manche suivante"
     tour_en_cours = partie.tours.filter(valide=False).order_by('-numero').first()
 
+    # Retire un joueur du classement de la manche en cours, et recalcule les roles/positions des joueurs restants
+    if request.method == "POST" and 'retirer_joueur_id' in request.POST:
+        joueur = get_object_or_404(ListeJoueurs, id=request.POST.get('retirer_joueur_id'))
+
+        if tour_en_cours:
+            ClassementManche.objects.filter(tour=tour_en_cours, joueur=joueur).delete()
+
+            # Renumerote les joueurs restants dans l'ordre, et recalcule leur role en fonction de leur nouvelle position
+            classements_restants = ClassementManche.objects.filter(tour=tour_en_cours).order_by('ordre_arrivee')
+            for index, classement in enumerate(classements_restants, start=1):
+                classement.ordre_arrivee = index
+                classement.role = determiner_role_president(index, nb_joueurs)
+                classement.save()
+
+        return redirect('partie_President')
+
     if request.method == "POST" and 'joueur_id' in request.POST:
         joueur = get_object_or_404(ListeJoueurs, id=request.POST.get('joueur_id'))
 
@@ -207,7 +223,7 @@ def debut_President(request):
 
         return redirect('partie_President')
 
-    # Valiude le tour en cours
+    # Valide le tour en cours
     if request.method == "POST" and 'manche_suivante' in request.POST:
         if tour_en_cours:
             tour_en_cours.valide = True

@@ -40,24 +40,29 @@
                         {% if not classement_en_cours %}
                         <p class="text-sm opacity-40">Aucun joueur classé</p>
                         {% endif %}
+                        <!-- Chaque ligne est un formulaire : un clic dessus retire le joueur du classement et le remet dans "Restant" -->
                         {% for c in classement_en_cours %}
-                        <div class="flex items-center gap-3 px-4 py-3 bg-base-100 rounded-lg">
-                            {% if c.role == "Président" %}
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: gold;"></span>
-                            {% elif c.role == "Vice-Président" %}
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: silver;"></span>
-                            {% elif c.role == "Vice-Trouduc" %}
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #cd7f32;"></span>
-                            {% elif c.role == "Trouduc" %}
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #e74c3c;"></span>
-                            {% else %}
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #808080;"></span>
-                            {% endif %}
-                            <div class="min-w-0">
-                                <div style="color: {{ c.joueur.couleur }}; font-weight: bold;" class="truncate">{{ c.joueur.joueurNom }}</div>
-                                <div class="text-xs opacity-50 mt-0.5">{{ c.role }}</div>
-                            </div>
-                        </div>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="retirer_joueur_id" value="{{ c.joueur.id }}">
+                            <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 bg-base-100 hover:bg-base-300 rounded-lg transition-colors text-left">
+                                {% if c.role == "Président" %}
+                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: gold;"></span>
+                                {% elif c.role == "Vice-Président" %}
+                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: silver;"></span>
+                                {% elif c.role == "Vice-Trouduc" %}
+                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #cd7f32;"></span>
+                                {% elif c.role == "Trouduc" %}
+                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #e74c3c;"></span>
+                                {% else %}
+                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: #808080;"></span>
+                                {% endif %}
+                                <div class="min-w-0">
+                                    <div style="color: {{ c.joueur.couleur }}; font-weight: bold;" class="truncate">{{ c.joueur.joueurNom }}</div>
+                                    <div class="text-xs opacity-50 mt-0.5">{{ c.role }}</div>
+                                </div>
+                            </button>
+                        </form>
                         {% endfor %}
                     </div>
                 </div>
