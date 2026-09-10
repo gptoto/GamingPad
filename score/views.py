@@ -6,8 +6,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Max
 from django.utils import timezone
 
-from score.forms import JoueurForm, SuggestionForm
-from .models import ListeJoueurs, Partie, Suggestion, Tour, ScoreTour, ClassementPartie, Suggestion
+from score.forms import JoueurForm, CouleurForm, SuggestionForm
+from .models import ListeJoueurs, Partie, Suggestion, Tour, ScoreTour, ClassementPartie
+
+def changer_couleur(request, id):
+    joueur = get_object_or_404(ListeJoueurs, id=id)
+    if request.method == "POST":
+        joueur.couleur = request.POST.get('couleur')
+        joueur.save()
+    return redirect('gestion_joueurs')
 
 
 def raz_Partie(request, type_jeu): #RAZ de la partie 
@@ -16,6 +23,10 @@ def raz_Partie(request, type_jeu): #RAZ de la partie
     if partie_id:
         Partie.objects.filter(id=partie_id).delete()
         del request.session[nom_var_session]
+
+    cle_selection = f'joueurs_{type_jeu}' # TODO : eclaircir ce point
+    if cle_selection in request.session:
+        del request.session[cle_selection]
 
     routes_par_jeu = { #Gestion dynamique des routes de RAZ + regroupement pour ne pas gérer dans urls.py
         'flechette': 'partie_Flechette',
@@ -27,12 +38,44 @@ def raz_Partie(request, type_jeu): #RAZ de la partie
 def affiche_accueil(request):
     return render(request, 'partie/accueil.html')
 
+def selection_partie(request, type_jeu): # Page de sélection des joueurs avant le lancement de la partie
+    joueurs = ListeJoueurs.objects.order_by('joueurNum')
+
+    if request.method == "POST": # TODO : eclaircir ce point
+        ids_selectionnes = request.POST.getlist('joueurs_selectionnes')
+        request.session[f'joueurs_{type_jeu}'] = ids_selectionnes
+
+        routes_par_jeu = {  # Construit le lien pour le bouton de lancement de partie
+            'flechette' : 'partie_Flechette',
+            'president': 'partie_President',
+            'dumble': 'partie_Dumble',
+        }
+        return redirect(routes_par_jeu.get(type_jeu, 'accueil'))
+
+    noms_jeu = {
+        'flechette': 'Fléchettes',
+        'president': 'Président',
+        'dumble': 'Dumble',        
+    }
+
+    return render(request, 'partie/selection_joueurs.html', {
+        'joueurs':joueurs,
+        'type_jeu': type_jeu,
+        'nom_jeu': noms_jeu.get(type_jeu, type_jeu)
+    })
+
+
 def debut_Flechettes(request):
+    if 'joueurs_flechette' not in request.session:
+        return redirect('selection_partie', type_jeu='flechette')
+
+    ids_selectionnes = request.session.get('joueurs_flechette')
+
     # Récupère la partie en cours (ou en crée une nouvelle)
     partie_id = request.session.get('partie_flechette_id')
 
     # Si une partie est enregistrée en base sans date_fin (donc en cours), la supprimer pour recommencer une partie propre
-    Partie.objects.filter(typeJeu='', dateFin__isnull=True).exclude(id=partie_id).delete()
+    Partie.objects.filter(typeJeu='flechette', dateFin__isnull=True).exclude(id=partie_id).delete()
 
     partie = None
     if partie_id:
@@ -41,7 +84,7 @@ def debut_Flechettes(request):
         partie = Partie.objects.create(typeJeu='flechette')
         request.session['partie_flechette_id'] = partie.id
 
-    joueurs_actifs = ListeJoueurs.objects.filter(joueurElim=1).order_by('joueurNum')
+    joueurs_actifs = ListeJoueurs.objects.filter(id__in=ids_selectionnes).order_by('joueurNum')
     tours_jouees = partie.tours.order_by('numero')
 
     if request.method == "POST" and 'valider_tour' in request.POST:
@@ -121,7 +164,8 @@ def debut_Dumble(request):
 def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gagne la partie (en fonction du type de jeu), enregistre ces infos puis les affiche
     partie = get_object_or_404(Partie, id=partie_id)
 
-    joueurs = ListeJoueurs.objects.filter(joueurElim=1) # Récupère uniquement les joueurs actifs (1 = Actif, cf la bdd) via un filtre
+    ids_selectionnes = request.session.get(f'joueurs_{partie.typeJeu}', [])
+    joueurs = ListeJoueurs.objects.filter(id__in=ids_selectionnes)
 
     if partie.typeJeu == "flechette":
         score_totaux = []
@@ -133,6 +177,7 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
             total = ScoreTour.objects.filter(tour__partie=partie, joueur=classement.joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
             score_totaux.append({
                 'joueur__joueurNom': classement.joueur.joueurNom,
+                'joueur_couleur': classement.joueur.couleur,
                 'joueur_id': classement.joueur.id,
                 'total': total,
             })
@@ -145,7 +190,8 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
             total = ScoreTour.objects.filter(tour__partie=partie, joueur=joueur, casse=False).aggregate(Sum('score'))['score__sum']  or 0
             restants.append({
                 'joueur__joueurNom': joueur.joueurNom,
-                'joueurs_id': joueur.id,
+                'joueur_couleur': joueur.couleur,
+                'joueur_id': joueur.id,
                 'total': 501 - total,
             })
 
@@ -174,6 +220,9 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
 
     if request.session.get('partie_flechette_id') == partie.id:
         del request.session['partie_flechette_id']
+    if request.session.get(f'joueurs_{partie.typeJeu}'):
+        del request.session[f'joueurs_{partie.typeJeu}']
+
 
     template_recap = { # nommage de l'url dynamique selon le type de jeu
         'flechette': 'partie/recap_flechette.html',
@@ -189,17 +238,17 @@ def fin_partie(request, partie_id): # Calcul le score final des joueurs, qui gag
 
 # Gestion de la liste de joueurs 
 
-def joueurs_view(request):
+def gestion_joueurs(request):
     if request.method == "POST":
         form = JoueurForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('joueurs')
+            return redirect('gestion_joueurs')
     else:
         form = JoueurForm()
 
-    joueurs = ListeJoueurs.objects.all()
-    return render(request, 'partie/joueurs.html', {
+    joueurs = ListeJoueurs.objects.order_by('joueurNum')
+    return render(request, 'partie/gestion_joueurs.html', {
         'form': form,
         'joueurs': joueurs,
     })
@@ -216,8 +265,8 @@ def suppr_Joueurs(request, id):
                 j.joueurNum = index
                 j.save()
 
-        return redirect('joueurs')
-    return redirect('joueurs') #else
+        return redirect('gestion_joueurs')
+    return redirect('gestion_joueurs') #else
 
 # --- Gestion des suggestions
 

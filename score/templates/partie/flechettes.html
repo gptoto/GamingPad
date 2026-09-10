@@ -7,7 +7,7 @@
     {% for joueur, reste, rang in joueurs_avec_reste %}
     <div class="bg-base-200 rounded-lg p-3 text-center">
         <p class="text-sm opacity-60"> <!-- Si possèdent un rang dans la partie actuelle, attribue une couleur aux joueurs -->
-            {{ joueur.joueurNom }}
+            <span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span>
             {% if rang == 1 %}
             <span class="badge" style="background-color: gold; color: black;">1</span>
             {% elif rang == 2 %}
@@ -28,7 +28,7 @@
     <p class="text-sm opacity-60 mb-2">Tour {{ tour.numero }}</p>
     <div class="grid grid-cols-2 gap-2">
         {% for score in tour.scores.all %}
-        <span>{{ score.joueur.joueurNom }}</span>
+        <span style="color: {{ score.joueur.couleur }}; font-weight: bold;">{{ score.joueur.joueurNom }}</span>
         <span class="text-right">
             {{ score.score }}
             {% if score.casse %}<span class="badge badge-warning badge-sm ml-1">Casse</span>{% endif %}
@@ -45,7 +45,7 @@
     <!-- Pour chaque joueur ; affiche son nom, puis soit un champ de saisie du score, soit un badge "A gagné" (s'il a déjà un rang enregistré) -->
     <div class="grid grid-cols-2 gap-2 mb-3 items-center">
         {% for joueur, reste, rang in joueurs_avec_reste %}
-        <label>{{ joueur.joueurNom }}</label>
+        <label><span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span></label>
         {% if rang %}
         <span class="badge badge-success">A gagné</span>
         {% else %}

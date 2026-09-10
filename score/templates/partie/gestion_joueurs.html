@@ -1,0 +1,37 @@
+{% extends "partie/base.html" %} <!-- Import du corps HTML dans base.html pour éviter de tout réécrire -->
+
+{% block content %} 
+    <form method = "POST" class="space-y-4 flex flex-col">
+        {% csrf_token %} <!-- génère un token unique et permet à django de sécuriser le formulaire à transmettre -->
+        {{form.joueurNom}}
+        <button type="submit" class="btn btn-primary">Ajouter</button> <!-- type permet de préciser que c'est un bouton de soumission -->
+    </form>
+<div class="divider"></div>
+
+<p class="text-sm opacity-60 mb-2">Joueurs enregistrés ({{ joueurs|length }})</p>
+
+
+<div class="space-y-2">
+    {% for jrs in joueurs %} <!-- boucle, fais références à la liste employes reçue depuis views.py depuis la BDD (en JSON auparavant) -->
+    <div class="p-3 bg-base-200 rounded-lg flex items-center justify-between">
+        <span style="color: {{ jrs.couleur }}; font-weight: bold;">{{ jrs.joueurNum }} - {{ jrs.joueurNom }}</span>
+        <div class="flex items-center gap-2">
+            <form method="POST" action="{% url 'changer_couleur' jrs.id %}">
+                {% csrf_token %}
+                <select name="couleur" class="select select-sm" onchange="this.form.submit()">
+                    {% for valeur, nom in jrs.couleurs.items %}
+                    <option value="{{ valeur }}" style="color: {{ valeur }};" {% if valeur == jrs.couleur %}selected{% endif %}>{{ nom }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <form method="POST" action="{% url 'suppression_joueurs' jrs.id %}"> <!-- Le form est une notion HTML qui déclenche une requête, ici de suppression en y liant un id -->
+                {% csrf_token %}
+                <button type="submit" class="btn btn-error btn-sm">Supprimer</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="divider"></div>
+{% endblock %} 

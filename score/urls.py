@@ -7,8 +7,10 @@ urlpatterns = [
     path('', views.affiche_accueil, name='accueil'),
 
     # Gestion des joueurs/partie
-    path('score/', views.joueurs_view, name='joueurs'),
-    path('supprimer/<int:id>', views.suppr_Joueurs, name='suppression_joueurs'),
+    path('joueurs/', views.gestion_joueurs, name='gestion_joueurs'),
+    path('joueurs/couleur/<int:id>/', views.changer_couleur, name='changer_couleur'),
+    path('joueurs/supprimer/<int:id>/', views.suppr_Joueurs, name='suppression_joueurs'),
+    path('selection/<str:type_jeu>/', views.selection_partie, name='selection_partie'),
     path('raz/<str:type_jeu>/', views.raz_Partie, name='raz_partie'),
 
     # flechette

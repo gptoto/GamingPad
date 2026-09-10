@@ -1,0 +1,72 @@
+{% extends "partie/base.html" %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-1">Qui participe ?</h1>
+<p class="opacity-60 mb-4">{{ nom_jeu }} · choisis les joueurs de la partie</p>
+
+<div class="grid grid-cols-2 gap-4 relative">
+    <div class="absolute left-1/2 top-0 bottom-0 border-l border-base-content/20"></div>
+    <div>
+        <p class="text-sm opacity-60 mb-2">Disponibles</p>
+        <div id="liste-dispo" class="space-y-2">
+            {% for joueur in joueurs %}
+            <div class="joueur-ligne p-2 bg-base-200 rounded-lg flex items-center justify-between" data-id="{{ joueur.id }}">
+                <span style="color: {{ joueur.couleur }}; font-weight: bold;">{{ joueur.joueurNom }}</span>
+                <button type="button" class="btn btn-circle btn-sm" onclick="deplacerJoueur(this)">+</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div>
+        <p class="text-sm text-primary mb-2">Sélectionnés (<span id="compteur-select">0</span>)</p>
+        <div id="liste-select" class="space-y-2"></div>
+    </div>
+</div>
+
+<form method="POST" id="form-selection" class="mt-4">
+    {% csrf_token %}
+    <div id="inputs-caches"></div>
+    <button type="submit" class="btn btn-primary w-full">Lancer la partie</button>
+</form>
+
+
+<script>
+// Déplace une ligne joueur d'une liste à l'autre, change le texte du bouton (+ ou -)
+function deplacerJoueur(bouton) {
+    const ligne = bouton.closest('.joueur-ligne');
+    const listeDispo = document.getElementById('liste-dispo');
+    const listeSelect = document.getElementById('liste-select');
+
+    if (ligne.parentElement === listeDispo) {
+        listeSelect.appendChild(ligne);
+        bouton.textContent = '-';
+    } else {
+        listeDispo.appendChild(ligne);
+        bouton.textContent = '+';
+    }
+
+    mettreAJourCompteur();
+}
+
+// Met à jour le nombre affiche de joueurs selectionnés
+function mettreAJourCompteur() {
+    const nb = document.getElementById('liste-select').children.length;
+    document.getElementById('compteur-select').textContent = nb;
+}
+
+// Juste avant l'envoi du formulaire, crée un champ caché par joueur selectionné pour garder l'info jusque la page suivante
+document.getElementById('form-selection').addEventListener('submit', function() {
+    const inputsCaches = document.getElementById('inputs-caches');
+    inputsCaches.innerHTML = '';
+
+    document.querySelectorAll('#liste-select .joueur-ligne').forEach(function(ligne) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'joueurs_selectionnes';
+        input.value = ligne.dataset.id;
+        inputsCaches.appendChild(input);
+    });
+});
+</script>
+{% endblock %}

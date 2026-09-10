@@ -8,14 +8,14 @@
         tabindex="-1"
         class="menu menu-lg dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
         <li><a href="{% url 'accueil' %}">Accueil</a></li>
-        <li><a href="{% url 'joueurs' %}">Saisie des joueurs</a></li>
+        <li><a href="{% url 'gestion_joueurs' %}">Gestion des joueurs</a></li>
         <li>
           <details>
             <summary>Lancer une partie</summary>
             <ul>
-              <li><a href="{% url 'partie_Flechette' %}">Partie de Fléchettes 501</a></li>
-              <li><a href="{% url 'partie_President' %}">Partie de Président</a></li>
-              <li><a href="{% url 'partie_Dumble' %}">Partie de Dumble</a></li>
+              <li><a href="{% url 'selection_partie' 'flechette' %}">Fléchette 501</a></li> <!-- Le type de jeu est transmis à la sélection de joueurs, qui transmettra ensuite la nature du jeu au bouton de lancement -->
+              <li><a href="{% url 'selection_partie' 'president' %}">Président</a></li>
+              <li><a href="{% url 'selection_partie' 'dumble' %}">Dumble</a></li>
             </ul>
           </details>
         </li>
@@ -32,7 +32,6 @@
             </ul>
           </details>
         </li>
-
       </ul>
     </div>
   </div>

@@ -5,15 +5,20 @@ from .models import ListeJoueurs, Suggestion
 class JoueurForm(forms.ModelForm): # Permet l'ajout de joueurs aux parties à venir
     class Meta:
         model = ListeJoueurs
-        fields = ['joueurNom','joueurElim',]
+        fields = ['joueurNom']
         widgets = {
             'joueurNom' : forms.TextInput(attrs = {
                 'class' : 'input w-full', # réfère une apparence DaisyUI ici
                 'placeholder' : 'Nom du joueur'
             }),
-            'joueurElim' : forms.Select(attrs = {
-                'class' : 'input w-full', # réfère une apparence DaisyUI ici
-            }),
+        }
+
+class CouleurForm(forms.ModelForm):
+    class Meta:
+        model = ListeJoueurs
+        fields = ['couleur']
+        widgets = {
+            'couleur': forms.Select(attrs={'class': 'select select-sm'}),
         }
 
 class SuggestionForm(forms.ModelForm): # Permet de saisir des suggestions en tant qu'invité (aucune connexion requise)

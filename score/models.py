@@ -1,21 +1,52 @@
+import random
 from django.db import models
 
 class ListeJoueurs(models.Model):
-    num_choices = [
-        (1, 'Actif'),
-        (2, 'Inactif'),
-    ]
+    couleurs = {
+        '#e74c3c': 'Rouge',
+        '#3498db': 'Bleu',
+        '#2ecc71': 'Vert',
+        '#f1c40f': 'Jaune',
+        '#9b59b6': 'Violet',
+        '#e91e63': 'Rose',
+        '#e67e22': 'Orange',
+        '#2980b9': 'Bleu océan',
+        '#27ae60': 'Vert émeraude',
+        '#f39c12': 'Ambre',
+        '#16a085': 'Turquoise',
+        '#7f8c8d': 'Gris',
+        '#f1948a': 'Corail',
+        '#5dade2': 'Bleu ciel',
+        '#58d68d': 'Vert menthe',
+        '#bb8fce': 'Lavande',
+        '#f8c471': 'Abricot',
+        '#76d7c4': "Vert d'eau",
+        '#af601a': 'Marron',
+        '#f0b27a': 'Peche',
+        '#a569bd': 'Améthyste',
+        '#1f618d': 'Bleu marine',
+    }
 
     # Généré automatiquement depuis la bdd et donc non modifiable manuellement par le joueur + évitement de duplicité
     joueurNum = models.DecimalField(max_digits=10, decimal_places=0, editable=False, unique=True ) 
     joueurNom = models.CharField(max_length=50)
-    joueurElim = models.DecimalField(choices=num_choices, max_digits=1, decimal_places=0) # 2 choix prédéfini en amont. Enregistré en float en bdd
+    couleur = models.CharField(max_length=10, choices=list(couleurs.items()), blank=True)
 
     def save(self, *args, **kwargs): # Récup du dernier num de joueur stocké en base
         if self.joueurNum is None: # Le formulaire ne remplit jamais ce champ, donc à l'ajout, fait appel automatiquement à cette section
             dernier = ListeJoueurs.objects.aggregate(models.Max('joueurNum'))
             dernier_num = dernier['joueurNum__max']
             self.joueurNum = (dernier_num or 0) + 1
+
+        # Attribue une couleur random si n'en a pas d'enregistrée, en evitant au maximum les doublons
+        if not self.couleur:
+            couleurs_utilisees = ListeJoueurs.objects.exclude(pk=self.pk).values_list('couleur', flat=True)
+            couleurs_dispo = [code for code in self.couleurs if code not in couleurs_utilisees]
+            if couleurs_dispo:
+                self.couleur = random.choice(couleurs_dispo)
+            else:
+                self.couleur = random.choice(list(self.couleurs))
+
         super().save(*args, **kwargs)
 
     def __str__(self):
